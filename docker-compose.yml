@@ -1,0 +1,11 @@
+services:
+  desafiodb:
+    image: postgres:latest
+    container_name: desafiodb
+    environment:
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_USER: postgres
+    ports:
+      - 5435:5432
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
