@@ -11,4 +11,9 @@
       <ProjectReference Include="..\Domain\Domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="ECommerce.Data.EntityFramework.SqlLite" Version="1.0.1" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
+    </ItemGroup>
+
 </Project>

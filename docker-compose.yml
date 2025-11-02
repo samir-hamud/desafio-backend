@@ -9,3 +9,9 @@ services:
       - 5435:5432
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+  rabbitmq:
+    image: rabbitmq:latest
+    container_name: rabbitmq
+    ports:
+      - 5672:5672
+    restart: unless-stopped

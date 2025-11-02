@@ -13,7 +13,7 @@ public abstract class Repository<T> : IRepository<T> where T : class
         _db = db;
     }
     
-    public virtual async Task<T?> GetByIdAsync(long id)
+    public virtual async Task<T?> GetByIdAsync(string id)
     {
         return await _db.FindAsync<T>(id);
     }
