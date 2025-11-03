@@ -13,6 +13,11 @@ public class AdicionarImagemCNHRequest
         ImagemCnh = imagemCnh;
     }
 
+    public AdicionarImagemCNHRequest()
+    {
+        
+    }
+
     /// <example>base64string</example>
     [JsonPropertyName("imagem_cnh")]
     public string ImagemCnh { get; set; }

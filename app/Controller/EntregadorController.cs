@@ -1,10 +1,10 @@
 ﻿using App.Controller.Schemas;
 using App.DTO;
 using App.Mappings;
-using App.Utils;
-using Domain.Entities;
 using Domain.Interfaces;
+using Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -13,37 +13,27 @@ namespace App.Controller;
 [ApiController]
 [Produces("application/json")]
 [ApiExplorerSettings(GroupName = "v1")]
-public class EntregadorController(IEntregadorRepository repo)
-    : AppController<Entregador, EntregadorDTO>(repo)
+public class EntregadorController(IEntregadorService service, ILogger<EntregadorController> logger)
+    : AppController<Entregador, EntregadorDTO>
 {
-    [NonAction]
-    public override Task<IActionResult> GetAll()
-    {
-        return Task.FromResult<IActionResult>(BadRequest());
-    }
-
-    [NonAction]
-    public override Task<IActionResult> Get(string id)
-    {
-        return Task.FromResult<IActionResult>(BadRequest());
-    }
+    private readonly ILogger _logger = logger;
 
     [HttpPost("/entregadores")]
     [SwaggerOperation(OperationId = "addEntregador", Tags = ["entregadores"])]
     [SwaggerResponse(StatusCodes.Status201Created, "")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Dados inválidos", typeof(Response))]
     [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(DadosInvalidosExample))]
-    public override async Task<IActionResult> Post([FromBody] EntregadorDTO dto)
+    public async Task<IActionResult> Post([FromBody] EntregadorDTO dto)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(DadosInvalidos());
-
         try
         {
-            await repo.AddAsync(dto.ToEntity());
+            _logger.LogInformation("Adicionando entregador");
+            var ent = dto.ToEntity();
+            await service.AddAsync(ent);
         }
         catch (Exception)
         {
+            _logger.LogError("Erro ao adicionar entregador");
             return BadRequest(DadosInvalidos());
         }
         
@@ -61,23 +51,26 @@ public class EntregadorController(IEntregadorRepository repo)
         if (string.IsNullOrEmpty(body.ImagemCnh))
             return BadRequest(DadosInvalidos());
 
-        var ent = await repo.GetByIdAsync(id);
+        var ent = await service.GetByIdAsync(id);
 
         if (ent is null)
             return BadRequest(DadosInvalidos());
 
         try
         {
-            var path = await CnhUtils.SalvarImagem(id, body.ImagemCnh);
+            _logger.LogInformation("Salvando imagem");
+            var path = await service.SalvarImagemCnhAsync(id, body.ImagemCnh);
             
             if (string.IsNullOrEmpty(path))
                 return BadRequest(DadosInvalidos());
             
             ent.PathImagemCnh = path;
-            await repo.UpdateAsync(ent);
+            await service.UpdateAsync(ent);
+            _logger.LogInformation("Imagem salva com sucesso");
         }
         catch (Exception)
         {
+            _logger.LogError("Erro ao salvar imagem");
             return BadRequest(DadosInvalidos());
         }
         

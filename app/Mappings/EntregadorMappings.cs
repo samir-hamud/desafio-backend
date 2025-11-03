@@ -1,5 +1,7 @@
 ﻿using App.DTO;
 using Domain.Entities;
+using Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace App.Mappings;
 
@@ -15,22 +17,13 @@ public static class EntregadorMappings
             entity.DataNascimento,
             entity.NumeroCnh,
             entity.TipoCnh,
-            entity.GetImagem(),
-            entity.PathImagemCnh
+            entity.GetImagem()
         );
     }
 
     public static Entregador ToEntity(this EntregadorDTO dto)
     {
-        return new Entregador
-        (
-            dto.Identificador,
-            dto.Nome,
-            dto.Cnpj,
-            dto.DataNascimento,
-            dto.NumeroCnh,
-            dto.TipoCnh,
-            dto.PathImagem
-        );
+        return new Entregador(dto.Identificador, dto.Nome, dto.Cnpj, dto.DataNascimento, dto.NumeroCnh,
+            dto.TipoCnh, dto.ImagemCnh);
     }
 }

@@ -1,6 +1,14 @@
 @desafio_backend_HostAddress = http://localhost:5041
 
-GET {{desafio_backend_HostAddress}}/weatherforecast/
+POST {{desafio_backend_HostAddress}}/motos
+Content-Type: application/json
 Accept: application/json
+
+{
+    "identificador": "moto1123",
+    "ano": 2024,
+    "modelo": "modelo",
+    "placa": "1423"
+}
 
 ###

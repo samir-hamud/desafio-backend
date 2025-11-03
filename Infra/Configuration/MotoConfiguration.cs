@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace App.Configuration;
+namespace Infra.Configuration;
 
 public class MotoConfiguration : IEntityTypeConfiguration<Moto>
 {
@@ -14,7 +14,7 @@ public class MotoConfiguration : IEntityTypeConfiguration<Moto>
         builder.HasIndex(x => x.Identificador).IsUnique();
         builder.HasIndex(x => x.Placa).IsUnique();
         builder.Property(x => x.Placa).HasMaxLength(20).IsRequired();
-        builder.Property(x => x.Identificador).HasMaxLength(20).IsRequired();
+        builder.Property(x => x.Identificador).IsRequired();
         builder.Property(x => x.Ano).IsRequired();
         builder.Property(x => x.Modelo).HasMaxLength(50).IsRequired();
     }

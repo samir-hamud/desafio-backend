@@ -33,3 +33,13 @@ public class MotoNaoEncontradaExample : IExamplesProvider<Response>
 {
     public Response GetExamples() => new("Moto não encontrada");
 }
+
+public class LocacaoNaoEncontradaExample : IExamplesProvider<Response>
+{
+    public Response GetExamples() => new("Locação não encontrada");
+}
+
+public class DevolucaoInformadaExample : IExamplesProvider<Response>
+{
+    public Response GetExamples() => new("Data de devolução informada com sucesso");
+}

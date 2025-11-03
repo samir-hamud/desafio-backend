@@ -3,7 +3,7 @@
 public class Entregador : Entity
 {
     public Entregador(string identificador, string nome, string cnpj, DateTime dataNascimento,
-        string numeroCnh, string tipoCnh, string pathImagemCnh)
+        string numeroCnh, string tipoCnh, string? pathImagemCnh)
     {
         Identificador = identificador;
         Nome = nome;
@@ -19,7 +19,7 @@ public class Entregador : Entity
     public DateTime DataNascimento { get; set; }
     public string NumeroCnh { get; set; }
     public string TipoCnh { get; set; }
-    public string PathImagemCnh { get; set; }
+    public string? PathImagemCnh { get; set; }
     
-    public string GetImagem() => Convert.ToBase64String(File.ReadAllBytes(PathImagemCnh)); 
+    public string GetImagem() => PathImagemCnh != null ? Convert.ToBase64String(File.ReadAllBytes(PathImagemCnh)) : string.Empty; 
 }

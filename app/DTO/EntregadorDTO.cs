@@ -8,19 +8,19 @@ namespace App.DTO;
 [SwaggerSchema]
 public class EntregadorDTO : BaseDTO
 {
+    public EntregadorDTO() {}
+    
     public EntregadorDTO(string identificador, string nome, string cnpj, DateTime dataNascimento,
-        string numeroCnh, string tipoCnh, string imagemCnh, string pathImagem)
+        string numeroCnh, string tipoCnh, string imagemCnh)
     {
         Identificador = identificador;
         Nome = nome;
         Cnpj = cnpj;
-        DataNascimento = dataNascimento;
+        DataNascimento = DateTime.SpecifyKind(dataNascimento, DateTimeKind.Utc);
         NumeroCnh = numeroCnh;
         TipoCnh = tipoCnh;
         ImagemCnh = imagemCnh;
-        PathImagem = pathImagem;   
     }
-
     /// <example>entregador123</example>
     public sealed override string Identificador { get; set; }
 
@@ -45,9 +45,6 @@ public class EntregadorDTO : BaseDTO
     /// <example>base64string</example>
     [JsonPropertyName("imagem_cnh")]
     public string ImagemCnh { get; set; }
-    
-    [SwaggerIgnore]
-    public string PathImagem { get; set; }
 }
 
 public class EntregadorExample : IExamplesProvider<Entregador>

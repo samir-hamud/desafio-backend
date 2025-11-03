@@ -1,6 +1,6 @@
-﻿using App.Context;
-using Domain.Entities;
+﻿using Domain.Entities;
 using Domain.Interfaces;
+using Infra.Context;
 using Infra.Repositories;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;

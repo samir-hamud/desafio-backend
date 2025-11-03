@@ -1,5 +1,6 @@
-﻿using App.Context;
+﻿using Domain.Entities;
 using Domain.Mappings;
+using Infra.Context;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infra.Repositories;
@@ -25,14 +26,27 @@ public abstract class Repository<T> : IRepository<T> where T : class
 
     public virtual async Task AddAsync(T entity)
     {
+        if (entity is Entity entidade)
+        {
+            if (string.IsNullOrEmpty(entidade.Identificador))
+            {
+                entidade.Identificador = Guid.NewGuid().ToString();
+            }
+        }
+        
         await _db.Set<T>().AddAsync(entity);
         await _db.SaveChangesAsync();   
     }
 
     public virtual async Task UpdateAsync(T entity)
     {
-        _db.Set<T>().Update(entity);
         await _db.SaveChangesAsync();
+    }
+
+    public virtual Task BeginUpdate(T entity)
+    {
+        _db.Set<T>().Attach(entity);
+        return Task.CompletedTask;   
     }
 
     public virtual async Task DeleteAsync(T entity)

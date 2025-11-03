@@ -3,7 +3,6 @@ using Domain.Mappings;
 
 namespace Domain.Interfaces;
 
-public interface IMensagemRepository : IRepository<Mensagem>
+public interface ILocacaoRepository : IRepository<Locacao>
 {
-    
 }

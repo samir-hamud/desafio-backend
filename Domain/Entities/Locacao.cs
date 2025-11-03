@@ -4,6 +4,8 @@ namespace Domain.Entities;
 
 public class Locacao : Entity
 {
+    public Locacao(){}
+    
     public Locacao(string identificador, Moto moto, Entregador entregador, DateTime dataInicio,
         DateTime dataTermino, DateTime dataPrevisaoTermino, Plano plano)
     {
@@ -21,7 +23,28 @@ public class Locacao : Entity
     public DateTime DataInicio { get; set; }
     public DateTime DataTermino { get; set; }
     public DateTime DataPrevisaoTermino { get; set; }
+    public DateTime? DataDevolucao { get; set; }
     public Plano Plano { get; set; }
+    
+    public decimal CalcularValor()
+    {
+        var minimoLocacao = (int)(DataPrevisaoTermino.Date - DataInicio.Date).TotalDays;
+        var totalDiarias =
+            Math.Min(
+                (int)((DataDevolucao?.Date ?? DataPrevisaoTermino.Date) - DataInicio.Date)
+                .TotalDays, minimoLocacao);
+        var valorDiarias = totalDiarias * Plano.Valor;
+
+        var diariasMulta =
+            (int)((DataDevolucao?.Date ?? DataPrevisaoTermino.Date) - DataPrevisaoTermino.Date).TotalDays;
+
+        if (diariasMulta < 0)
+            valorDiarias += Plano.Valor * (1 + Plano.PercMulta / 100) * Math.Abs(diariasMulta);
+        else if (diariasMulta > 0)
+            valorDiarias += (Plano.Valor + 50m) * diariasMulta;
+
+        return valorDiarias;
+    }
 }
 
 public class LocacaoValidator : AbstractValidator<Locacao>

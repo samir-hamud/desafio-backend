@@ -1,8 +1,11 @@
-﻿using System.Net.Http.Json;
+﻿using System.Globalization;
+using System.Net.Http.Json;
 using App.Controller.Schemas;
 using App.DTO;
 using Domain.Entities;
+using Infra.Context;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Xunit.Abstractions;
 
 namespace Tests.IntegrationTests;
@@ -172,5 +175,173 @@ public class EndpointTests : IClassFixture<TestWebApplicationFactory>
         
         Assert.Equal(StatusCodes.Status400BadRequest, (int)response.StatusCode);
         Assert.Equal("Request mal formada", mensagem?.Mensagem);
+    }
+    
+    [Fact, TestPriority(13)]
+    public async Task adicionar_entregador() 
+    {
+        var novo = new EntregadorDTO("1", "nome", "cnpj", new DateTime(1990, 1, 1), "1234567890", "A",
+            "base64string");
+        
+        var response = await _client.PostAsJsonAsync("/entregadores", novo);
+        
+        _output.WriteLine(await response.Content.ReadAsStringAsync());
+        Assert.Equal(StatusCodes.Status201Created, (int)response.StatusCode);
+    }
+    
+    [Fact, TestPriority(14)]
+    public async Task adicionar_entregador_cnpj_duplicado() 
+    {
+        var novo = new EntregadorDTO("2", "nome", "cnpj", new DateTime(1990, 1, 1), "123", "A",
+            "base64string");
+
+        var response = await _client.PostAsJsonAsync("/entregadores", novo);
+
+        var mensagem = await response.Content.ReadFromJsonAsync<Response>();
+
+        Assert.Equal(StatusCodes.Status400BadRequest, (int)response.StatusCode);
+    }
+
+    [Fact, TestPriority(15)]
+    public async Task enviar_foto_cnh_entregador()
+    {
+        var dir = Directory.GetCurrentDirectory();
+        var arquivo = await File.ReadAllBytesAsync(Path.Combine(dir, "imagem.png"));
+        var request = new AdicionarImagemCNHRequest()
+        {
+            ImagemCnh = Convert.ToBase64String(arquivo)
+        };
+        var response = await _client.PostAsJsonAsync("/entregadores/1/cnh", request);
+        var db = (MyDbContext?) _factory.Services.GetService(typeof(MyDbContext));
+        
+        Entregador? entregador = null;
+        if (db is not null)
+            entregador = await db.Entregadores.FirstOrDefaultAsync(x => x.Identificador == "1");
+        
+        Assert.NotEqual(string.Empty, entregador?.PathImagemCnh);
+        Assert.Equal(StatusCodes.Status201Created, (int)response.StatusCode);
+    }
+
+    [Fact, TestPriority(16)]
+    public async Task verificar_imagem_cnh_adicionada()
+    {
+        var db = (MyDbContext?) _factory.Services.GetService(typeof(MyDbContext));
+        if (db is null)
+            Assert.True(false);
+        
+        var entregador = await db.Entregadores.FirstOrDefaultAsync(x => x.Identificador == "1");
+        
+        if (entregador is null)
+            Assert.True(false);
+        
+        if (File.Exists("imagem.png"))
+            File.Delete("imagem.png");
+        
+        if (entregador.PathImagemCnh is not null)
+            File.Copy(entregador.PathImagemCnh, "imagem.png", true);
+        
+        _output.WriteLine(entregador.PathImagemCnh);
+        _output.WriteLine(Path.GetFullPath("imagem.png"));
+        Assert.True(File.Exists("imagem.png"));
+    }
+    
+    [Fact, TestPriority(17)]
+    public async Task alugar_moto()
+    {
+        var request = new LocacaoRequest
+        {
+            IdMoto = "moto2",
+            IdEntregador = "1",
+            DataInicio = DateTime.Now.Date.AddDays(1),
+            DataTermino = DateTime.Now.AddDays(7),
+            DataPrevisaoTermino = DateTime.Now.AddDays(7),
+            IdPlano = 7
+        };
+
+        var response = await _client.PostAsJsonAsync("/locacao", request);
+        Assert.Equal(StatusCodes.Status201Created, (int)response.StatusCode);
+        
+        var db = (MyDbContext?) _factory.Services.GetService(typeof(MyDbContext));
+        if (db is null)
+            Assert.Fail("db é nulo");
+
+        var loc = db.Locacoes.FirstOrDefault(x =>
+            x.Entregador.Identificador == "1" && x.Moto.Identificador == "moto2");
+
+        if (loc is null)
+            Assert.Fail("locacao não encontrada no db");
+        
+        Assert.NotNull(loc);
+    }
+    
+    [Fact, TestPriority(18)]
+    public async Task informar_devolucao()
+    {
+        var db = (MyDbContext?) _factory.Services.GetService(typeof(MyDbContext));
+        
+        if (db is null)
+            Assert.Fail("db é nulo");
+
+        var loc = db.Locacoes.FirstOrDefault();
+        
+        if (loc is null)
+            Assert.Fail("não há locações");
+        
+        var request = new DevolucaoRequest
+        {
+            DataDevolucao = DateTime.Now.AddDays(5)
+        };
+        
+        var response = await _client.PutAsJsonAsync($"/locacao/{loc.Identificador}/devolucao", request);
+        Assert.Equal(StatusCodes.Status200OK, (int)response.StatusCode);
+    }
+
+    [Fact, TestPriority(19)]
+    public async Task verificar_data_devolucao()
+    {
+        var db = (MyDbContext?) _factory.Services.GetService(typeof(MyDbContext));
+        
+        if (db is null)
+            Assert.Fail("db é nulo");
+
+        var loc = await db.Locacoes.Include(x => x.Entregador).Include(x => x.Moto).Include(x => x.Plano)
+            .FirstAsync();
+        
+        db.Entry(loc).State = EntityState.Modified;
+        await db.Entry(loc).ReloadAsync();
+        _output.WriteLine(loc.CalcularValor().ToString(CultureInfo.InvariantCulture));
+        Assert.NotNull(loc);
+        Assert.NotNull(loc.DataDevolucao);
+    }
+
+    [Fact, TestPriority(20)]
+    public async Task consultar_locacao_por_id()
+    {
+        var db = (MyDbContext?) _factory.Services.GetService(typeof(MyDbContext));
+        
+        if (db is null)
+            Assert.Fail("db é nulo");
+
+        var loc = await db.Locacoes.FirstAsync();
+        
+        var response = await _client.GetAsync($"/locacao/{loc.Identificador}");
+        Assert.Equal(StatusCodes.Status200OK, (int)response.StatusCode);
+        
+        var locacao = await response.Content.ReadFromJsonAsync<LocacaoDTO>();
+        Assert.NotNull(locacao);
+        _output.WriteLine($"{locacao.Identificador} {locacao.DataInicio} {locacao.DataTermino} {locacao.DataPrevisaoTermino}");
+        Assert.Equal(loc.Identificador, locacao.Identificador);
+    }
+
+    [Fact, TestPriority(21)]
+    public async Task verificar_mensagem_publicada()
+    {
+        var db = (MyDbContext?) _factory.Services.GetService(typeof(MyDbContext));
+        if (db is null)
+            Assert.Fail("db é nulo");
+        
+        var mensagem = await db.Mensagens.FirstOrDefaultAsync();
+        
+        Assert.NotNull(mensagem);
     }
 }

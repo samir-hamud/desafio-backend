@@ -4,7 +4,6 @@ using App.DTO;
 using App.Mappings;
 using Domain.Entities;
 using Domain.Interfaces;
-using MassTransit.Internals;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
@@ -14,8 +13,8 @@ namespace App.Controller;
 [ApiController]
 [Produces("application/json")]
 [ApiExplorerSettings(GroupName = "v1")]
-public class MotoController(IMotoRepository repo, ILogger<MotoController> logger)
-    : AppController<Moto, MotoDTO>(repo)
+public class MotoController(IMotoService service, ILogger<MotoController> logger)
+    : AppController<Moto, MotoDTO>
 {
     private readonly ILogger _logger = logger;
     
@@ -30,20 +29,13 @@ public class MotoController(IMotoRepository repo, ILogger<MotoController> logger
     {
         if (string.IsNullOrWhiteSpace(placa))
         {
-            var all = await repo.GetAllAsync();
+            var all = await service.GetAllAsync();
             return Ok(all.Select(e => e.ToDTO()));
         }
 
-        var moto = await repo.GetByLicensePlateAsync(placa);
+        var moto = await service.GetByLicensePlateAsync(placa);
         IEnumerable<MotoDTO> list = moto is null ? Array.Empty<MotoDTO>() : new[] { moto.ToDTO() };
         return Ok(list);
-    }
-
-    [NonAction]
-    public override async Task<IActionResult> GetAll()
-    {
-        var all = await repo.GetAllAsync();
-        return Ok(all.Select(e => e.ToDTO()));
     }
 
     /// <summary>
@@ -57,11 +49,11 @@ public class MotoController(IMotoRepository repo, ILogger<MotoController> logger
     [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(RequestMalFormadaExample))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Moto não encontrada")]
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(MotoNaoEncontradaExample))]
-    public override async Task<IActionResult> Get(
+    public async Task<IActionResult> Get(
         [FromRoute] [StringLength(20, MinimumLength = 1)]
         string id)
     {
-        var result = await repo.GetByIdAsync(id);
+        var result = await service.GetByIdAsync(id);
 
         if (result == null)
             return NotFound(new Response("Moto não encontrada"));
@@ -80,14 +72,14 @@ public class MotoController(IMotoRepository repo, ILogger<MotoController> logger
     [SwaggerResponse(StatusCodes.Status201Created, "")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Dados inválidos", typeof(Response))]
     [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(DadosInvalidosExample))]
-    public override async Task<IActionResult> Post([FromBody] MotoDTO dto)
+    public async Task<IActionResult> Post([FromBody] MotoDTO dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(DadosInvalidos());
 
         try
         {
-            await repo.AddAsync(dto.ToEntity());
+            await service.AddAsync(dto.ToEntity());
         }
         catch (Exception)
         {
@@ -113,7 +105,7 @@ public class MotoController(IMotoRepository repo, ILogger<MotoController> logger
     public async Task<IActionResult> Put([FromRoute] string id,
         [FromBody] ModificarPlacaRequest body)
     {
-        var moto = await repo.GetByIdentificationAsync(id);
+        var moto = await service.GetByIdentificationAsync(id);
 
         if (moto is null)
             return BadRequest(DadosInvalidos());
@@ -122,7 +114,7 @@ public class MotoController(IMotoRepository repo, ILogger<MotoController> logger
 
         try
         {
-            await repo.UpdateAsync(moto);
+            await service.UpdateAsync(moto);
         }
         catch (Exception)
         {
@@ -142,12 +134,12 @@ public class MotoController(IMotoRepository repo, ILogger<MotoController> logger
     [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(DadosInvalidosExample))]
     public async Task<IActionResult> Delete([FromRoute] string id)
     {
-        var moto = await repo.GetByIdentificationAsync(id);
+        var moto = await service.GetByIdentificationAsync(id);
         
         if (moto == null)
             return BadRequest(DadosInvalidos());
         
-        await repo.DeleteAsync(moto);
+        await service.DeleteAsync(moto);
         
         return Ok();   
     }
