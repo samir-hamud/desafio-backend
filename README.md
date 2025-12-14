@@ -1,6 +1,6 @@
 ## Desafio 
 
-### Backend utilizando DDD, clean archicteture, SOLID e boas práticas.
+### Backend utilizando DDD, clean architecture, SOLID e boas práticas.
 #### Asp.Net com EntityFramework, Postgresql e Rabbitmq
 #### Necessário ter Docker instalado e executar o docker-compose antes de iniciar o projeto.
 
